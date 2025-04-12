@@ -1,0 +1,28 @@
+[project]
+name = "mcp-trino-python"
+version = "0.2.0"
+description = "A Model Context Protocol (MCP) connector for Trino, enabling seamless integration between MCP-compliant services and Trino query engine"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.12"
+keywords = ["trino", "connector", "mcp"]
+dependencies = [
+    "loguru>=0.7.3",
+    "mcp[cli]>=1.6.0",
+    "python-dotenv>=1.1.0",
+    "trino>=0.333.0",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[tool.black]
+target-version = ["py312"]
+line-length = 120
+skip-string-normalization = true

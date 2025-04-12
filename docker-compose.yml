@@ -1,0 +1,7 @@
+services:
+  trino:
+    image: trinodb/trino:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - trino-network
