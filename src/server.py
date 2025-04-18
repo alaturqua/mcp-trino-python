@@ -19,32 +19,32 @@ mcp = FastMCP("Trino Explorer", dependencies=["trino", "python-dotenv", "loguru"
 # Resources
 @mcp.resource(
     "catalog://main",
-    name="list_catalogs",
+    name="show_catalogs",
     description="List all available Trino catalogs",
 )
-def list_catalogs() -> str:
+def show_catalogs() -> str:
     """List all available Trino catalogs."""
-    return client.list_catalogs()
+    return client.show_catalogs()
 
 
 @mcp.resource(
     "schema://{catalog}",
-    name="list_schemas",
+    name="show_schemas",
     description="List all schemas in the specified catalog",
 )
-def list_schemas(catalog: str) -> str:
+def show_schemas(catalog: str) -> str:
     """List all schemas in a catalog."""
-    return client.list_schemas(catalog)
+    return client.show_schemas(catalog)
 
 
 @mcp.resource(
     "table://{catalog}/{schema}",
-    name="list_tables",
+    name="show_tables",
     description="List all tables in the specified schema",
 )
-def list_tables(catalog: str, schema: str) -> str:
+def show_tables(catalog: str, schema: str) -> str:
     """List all tables in a schema."""
-    return client.list_tables(catalog, schema)
+    return client.show_tables(catalog, schema)
 
 
 # Tools
@@ -179,6 +179,218 @@ def show_catalog_tree() -> str:
         str: A formatted string showing the catalog > schema > table hierarchy with visual indicators
     """
     return client.show_catalog_tree()
+
+
+@mcp.tool(description="Show Iceberg table properties")
+def show_table_properties(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table properties.
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted table properties
+    """
+    return client.show_table_properties(table, catalog, schema)
+
+
+@mcp.tool(description="Show Iceberg table history/changelog")
+def show_table_history(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table history/changelog.
+
+    The history contains:
+    - made_current_at: When snapshot became active
+    - snapshot_id: Identifier of the snapshot
+    - parent_id: Identifier of the parent snapshot
+    - is_current_ancestor: Whether snapshot is an ancestor of current
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted table history
+    """
+    return client.show_table_history(table, catalog, schema)
+
+
+@mcp.tool(description="Show Iceberg table metadata log entries")
+def show_metadata_log_entries(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table metadata log entries.
+
+    The metadata log contains:
+    - timestamp: When metadata was created
+    - file: Location of the metadata file
+    - latest_snapshot_id: ID of latest snapshot when metadata was updated
+    - latest_schema_id: ID of latest schema when metadata was updated
+    - latest_sequence_number: Data sequence number of metadata file
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted metadata log entries
+    """
+    return client.show_metadata_log_entries(table, catalog, schema)
+
+
+@mcp.tool(description="Show Iceberg table snapshots")
+def show_snapshots(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table snapshots.
+
+    The snapshots table contains:
+    - committed_at: When snapshot became active
+    - snapshot_id: Identifier for the snapshot
+    - parent_id: Identifier for the parent snapshot
+    - operation: Type of operation (append/replace/overwrite/delete)
+    - manifest_list: List of Avro manifest files
+    - summary: Summary of changes from previous snapshot
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted table snapshots
+    """
+    return client.show_snapshots(table, catalog, schema)
+
+
+@mcp.tool(description="Show Iceberg table manifests")
+def show_manifests(
+    table: str, catalog: str | None = None, schema: str | None = None, all_snapshots: bool = False
+) -> str:
+    """Show Iceberg table manifests for current or all snapshots.
+
+    The manifests table contains:
+    - path: Manifest file location
+    - length: Manifest file length
+    - partition_spec_id: ID of partition spec used
+    - added_snapshot_id: ID of snapshot when manifest was added
+    - added_data_files_count: Number of data files with status ADDED
+    - added_rows_count: Total rows in ADDED files
+    - existing_data_files_count: Number of EXISTING files
+    - existing_rows_count: Total rows in EXISTING files
+    - deleted_data_files_count: Number of DELETED files
+    - deleted_rows_count: Total rows in DELETED files
+    - partition_summaries: Partition range metadata
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+        all_snapshots: If True, show manifests from all snapshots
+
+    Returns:
+        str: JSON-formatted table manifests
+    """
+    return client.show_manifests(table, catalog, schema, all_snapshots)
+
+
+@mcp.tool(description="Show Iceberg table partitions")
+def show_partitions(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table partitions.
+
+    The partitions table contains:
+    - partition: Mapping of partition column names to values
+    - record_count: Number of records in partition
+    - file_count: Number of files in partition
+    - total_size: Total size of files in partition
+    - data: Partition range metadata with min/max values and null/nan counts
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted table partitions
+    """
+    return client.show_partitions(table, catalog, schema)
+
+
+@mcp.tool(description="Show Iceberg table data files")
+def show_files(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table data files in current snapshot.
+
+    The files table contains:
+    - content: Type of content (0=DATA, 1=POSITION_DELETES, 2=EQUALITY_DELETES)
+    - file_path: Data file location
+    - file_format: Format of the data file
+    - record_count: Number of records in file
+    - file_size_in_bytes: File size
+    - column_sizes: Column ID to size mapping
+    - value_counts: Column ID to value count mapping
+    - null_value_counts: Column ID to null count mapping
+    - nan_value_counts: Column ID to NaN count mapping
+    - lower_bounds: Column ID to lower bound mapping
+    - upper_bounds: Column ID to upper bound mapping
+    - key_metadata: Encryption key metadata
+    - split_offsets: Recommended split locations
+    - equality_ids: Field IDs for equality deletes
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted table files info
+    """
+    return client.show_files(table, catalog, schema)
+
+
+@mcp.tool(description="Show Iceberg table manifest entries")
+def show_entries(table: str, catalog: str | None = None, schema: str | None = None, all_snapshots: bool = False) -> str:
+    """Show Iceberg table manifest entries for current or all snapshots.
+
+    The entries table contains:
+    - status: Status of entry (0=EXISTING, 1=ADDED, 2=DELETED)
+    - snapshot_id: ID of the snapshot
+    - sequence_number: Data sequence number
+    - file_sequence_number: File sequence number
+    - data_file: File metadata including path, format, size etc
+    - readable_metrics: Human-readable file metrics
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+        all_snapshots: If True, show entries from all snapshots
+
+    Returns:
+        str: JSON-formatted manifest entries
+    """
+    return client.show_entries(table, catalog, schema, all_snapshots)
+
+
+@mcp.tool(description="Show Iceberg table references (branches and tags)")
+def show_refs(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Show Iceberg table references (branches and tags).
+
+    The refs table contains:
+    - name: Name of the reference
+    - type: Type of reference (BRANCH or TAG)
+    - snapshot_id: ID of referenced snapshot
+    - max_reference_age_in_ms: Max age before reference expiry
+    - min_snapshots_to_keep: Min snapshots to keep (branches only)
+    - max_snapshot_age_in_ms: Max snapshot age in branch
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: JSON-formatted table references
+    """
+    return client.show_refs(table, catalog, schema)
 
 
 # Prompts

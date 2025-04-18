@@ -52,7 +52,11 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
         "env": {
           "TRINO_HOST": "${input:trino_host}",
           "TRINO_PORT": "${input:trino_port}",
-          "TRINO_USER": "${input:trino_user}"
+          "TRINO_USER": "${input:trino_user}",
+          "TRINO_PASSWORD": "${input:trino_password}",
+          "TRINO_HTTP_SCHEME": "${input:trino_http_scheme}",
+          "TRINO_CATALOG": "${input:trino_catalog}",
+          "TRINO_SCHEMA": "${input:trino_schema}"
         }
       }
     }
@@ -69,7 +73,7 @@ Add the following configuration to your Claude Desktop settings:
   "mcpServers": {
     "trino": {
       "command": "python",
-      "args": ["server.py"],
+      "args": ["./src/server.py"],
       "env": {
         "TRINO_HOST": "your-trino-host",
         "TRINO_PORT": "8080",
@@ -92,7 +96,7 @@ Add the following configuration to your Claude Desktop settings:
 | TRINO_CATALOG     | Default catalog          | None      |
 | TRINO_SCHEMA      | Default schema           | None      |
 | TRINO_HTTP_SCHEME | HTTP scheme (http/https) | http      |
-| TRINO_AUTH        | Authentication method    | None      |
+| TRINO_PASSWORD    | Trino password           | None      |
 
 ## Resources
 
@@ -100,18 +104,18 @@ The server provides the following MCP resources:
 
 ### Catalog and Schema Navigation
 
-- **catalog://main** (`list_catalogs`)
+- **catalog://main** (`show_catalogs`)
 
   - Lists all available Trino catalogs
   - No parameters required
 
-- **schema://{catalog}** (`list_schemas`)
+- **schema://{catalog}** (`show_schemas`)
 
   - Lists all schemas in the specified catalog
   - Parameters:
     - `catalog`: Catalog name (string, required)
 
-- **table://{catalog}/{schema}** (`list_tables`)
+- **table://{catalog}/{schema}** (`show_tables`)
   - Lists all tables in the specified schema
   - Parameters:
     - `catalog`: Catalog name (string, required)
@@ -130,7 +134,7 @@ The server provides the following MCP resources:
 - **show_catalog_tree**
 
   - Show a hierarchical tree view of catalogs, schemas, and tables
-  - Returns a formatted tree structure with visual indicators 
+  - Returns a formatted tree structure with visual indicators
   - No parameters required
 
 - **show_create_table**
@@ -179,6 +183,90 @@ The server provides the following MCP resources:
   - Parameters:
     - `table`: Table name (string, required)
     - `retention_threshold`: Age threshold (e.g., "7d") (string, optional)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+### Iceberg Metadata Inspection
+
+- **show_table_properties**
+
+  - Show Iceberg table properties
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+- **show_table_history**
+
+  - Show Iceberg table history/changelog
+  - Contains snapshot timing, lineage, and ancestry information
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+- **show_metadata_log_entries**
+
+  - Show Iceberg table metadata log entries
+  - Contains metadata file locations and sequence information
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+- **show_snapshots**
+
+  - Show Iceberg table snapshots
+  - Contains snapshot details including operations and manifest files
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+- **show_manifests**
+
+  - Show Iceberg table manifests for current or all snapshots
+  - Contains manifest file details and data file statistics
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+    - `all_snapshots`: Include all snapshots (boolean, optional)
+
+- **show_partitions**
+
+  - Show Iceberg table partitions
+  - Contains partition statistics and file counts
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+- **show_files**
+
+  - Show Iceberg table data files in current snapshot
+  - Contains detailed file metadata and column statistics
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+
+- **show_entries**
+
+  - Show Iceberg table manifest entries for current or all snapshots
+  - Contains entry status and detailed file metrics
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
+    - `all_snapshots`: Include all snapshots (boolean, optional)
+
+- **show_refs**
+
+  - Show Iceberg table references (branches and tags)
+  - Contains reference configuration and snapshot mapping
+  - Parameters:
+    - `table`: Table name (string, required)
     - `catalog`: Catalog name (string, optional)
     - `schema`: Schema name (string, optional)
 
