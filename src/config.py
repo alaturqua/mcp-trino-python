@@ -17,7 +17,7 @@ class TrinoConfig:
     catalog: str | None = None
     schema: str | None = None
     http_scheme: str = "http"
-    auth: str | None = None
+    auth: trino.auth.BasicAuthentication | None = None
     source: str = "mcp-trino-python"
 
 
