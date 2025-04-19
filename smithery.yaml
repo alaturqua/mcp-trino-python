@@ -1,0 +1,64 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - trinoHost
+      - trinoPort
+      - trinoUser
+    properties:
+      trinoHost:
+        type: string
+        default: localhost
+        description: Trino server hostname
+      trinoPort:
+        type: number
+        default: 8080
+        description: Trino server port
+      trinoUser:
+        type: string
+        default: trino
+        description: Trino username
+      trinoCatalog:
+        type: string
+        default: ""
+        description: Default Trino catalog (optional)
+      trinoSchema:
+        type: string
+        default: ""
+        description: Default Trino schema (optional)
+      trinoHttpScheme:
+        type: string
+        default: http
+        description: HTTP scheme, e.g., http or https
+      trinoPassword:
+        type: string
+        default: ""
+        description: Trino password for authentication (optional)
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'python',
+      args: ['src/server.py'],
+      env: {
+        TRINO_HOST: config.trinoHost,
+        TRINO_PORT: config.trinoPort.toString(),
+        TRINO_USER: config.trinoUser,
+        TRINO_CATALOG: config.trinoCatalog,
+        TRINO_SCHEMA: config.trinoSchema,
+        TRINO_HTTP_SCHEME: config.trinoHttpScheme,
+        TRINO_PASSWORD: config.trinoPassword
+      }
+    })
+  exampleConfig:
+    trinoHost: localhost
+    trinoPort: 8080
+    trinoUser: trino
+    trinoCatalog: hive
+    trinoSchema: default
+    trinoHttpScheme: http
+    trinoPassword: ""
