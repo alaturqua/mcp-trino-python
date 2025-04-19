@@ -19,35 +19,83 @@ mcp = FastMCP("Trino Explorer", dependencies=["trino", "python-dotenv", "loguru"
 # Resources
 @mcp.resource(
     "catalog://main",
-    name="show_catalogs",
+    name="list_catalogs",
     description="List all available Trino catalogs",
 )
-def show_catalogs() -> str:
+def list_catalogs() -> str:
     """List all available Trino catalogs."""
-    return client.show_catalogs()
+    return client.list_catalogs()
 
 
 @mcp.resource(
     "schema://{catalog}",
-    name="show_schemas",
+    name="list_schemas",
     description="List all schemas in the specified catalog",
 )
-def show_schemas(catalog: str) -> str:
+def list_schemas(catalog: str) -> str:
     """List all schemas in a catalog."""
-    return client.show_schemas(catalog)
+    return client.list_schemas(catalog)
 
 
 @mcp.resource(
     "table://{catalog}/{schema}",
-    name="show_tables",
+    name="list_tables",
     description="List all tables in the specified schema",
 )
-def show_tables(catalog: str, schema: str) -> str:
+def list_tables(catalog: str, schema: str) -> str:
     """List all tables in a schema."""
-    return client.show_tables(catalog, schema)
+    return client.list_tables(catalog, schema)
 
 
 # Tools
+@mcp.tool(description="List all available catalogs")
+def show_catalogs() -> str:
+    """List all available catalogs."""
+    return client.list_catalogs()
+
+
+@mcp.tool(description="List all schemas in a catalog")
+def show_schemas(catalog: str) -> str:
+    """List all schemas in a catalog.
+
+    Args:
+        catalog: The name of the catalog
+
+    Returns:
+        str: List of schemas in the specified catalog
+    """
+    return client.list_schemas(catalog)
+
+
+@mcp.tool(description="List all tables in a schema")
+def show_tables(catalog: str, schema: str) -> str:
+    """List all tables in a schema.
+
+    Args:
+        catalog: The name of the catalog
+        schema: The name of the schema
+
+    Returns:
+        str: List of tables in the specified schema
+    """
+    return client.list_tables(catalog, schema)
+
+
+@mcp.tool(description="Describe a table")
+def describe_table(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    """Describe a table.
+
+    Args:
+        table: The name of the table
+        catalog: Optional catalog name (defaults to configured catalog)
+        schema: Optional schema name (defaults to configured schema)
+
+    Returns:
+        str: Table description in JSON format
+    """
+    return client.describe_table(table, catalog, schema)
+
+
 @mcp.tool(description="Show the CREATE TABLE statement for a specific table")
 def show_create_table(table: str, catalog: str | None = None, schema: str | None = None) -> str:
     """Show the CREATE TABLE statement for a table.

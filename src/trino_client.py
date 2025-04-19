@@ -96,7 +96,7 @@ class TrinoClient:
             query += f" LIMIT {limit}"
         return self.execute_query(query)
 
-    def show_catalogs(self) -> str:
+    def list_catalogs(self) -> str:
         """List all available catalogs.
 
         Returns:
@@ -105,7 +105,7 @@ class TrinoClient:
         catalogs = [row["Catalog"] for row in json.loads(self.execute_query("SHOW CATALOGS"))]
         return "\n".join(catalogs)
 
-    def show_schemas(self, catalog: str | None = None) -> str:
+    def list_schemas(self, catalog: str | None = None) -> str:
         """List all schemas in a catalog.
 
         Args:
@@ -125,7 +125,7 @@ class TrinoClient:
         schemas = [row["Schema"] for row in json.loads(self.execute_query(query))]
         return "\n".join(schemas)
 
-    def show_tables(self, catalog: str | None = None, schema: str | None = None) -> str:
+    def list_tables(self, catalog: str | None = None, schema: str | None = None) -> str:
         """List all tables in a schema.
 
         Args:
@@ -146,6 +146,27 @@ class TrinoClient:
         query = f"SHOW TABLES FROM {catalog}.{schema}"
         tables = [row["Table"] for row in json.loads(self.execute_query(query))]
         return "\n".join(tables)
+
+    def describe_table(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+        """Describe the structure of a table.
+
+        Args:
+            table (str): The name of the table.
+            catalog (Optional[str]): The catalog name. If None, uses configured default.
+            schema (Optional[str]): The schema name. If None, uses configured default.
+
+        Returns:
+            str: JSON-formatted string containing table description.
+
+        Raises:
+            CatalogSchemaError: If either catalog or schema is not specified and not configured.
+        """
+        catalog = catalog or self.config.catalog
+        schema = schema or self.config.schema
+        if not catalog or not schema:
+            raise CatalogSchemaError()
+        query = f"DESCRIBE {catalog}.{schema}.{table}"
+        return self.execute_query(query)
 
     def show_create_table(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
         """Show the CREATE TABLE statement for a table.
