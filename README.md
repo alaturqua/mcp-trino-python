@@ -104,18 +104,18 @@ The server provides the following MCP resources:
 
 ### Catalog and Schema Navigation
 
-- **catalog://main** (`show_catalogs`)
+- **catalog://main** (`list_catalogs`)
 
   - Lists all available Trino catalogs
   - No parameters required
 
-- **schema://{catalog}** (`show_schemas`)
+- **schema://{catalog}** (`list_schemas`)
 
   - Lists all schemas in the specified catalog
   - Parameters:
     - `catalog`: Catalog name (string, required)
 
-- **table://{catalog}/{schema}** (`show_tables`)
+- **table://{catalog}/{schema}** (`list_tables`)
   - Lists all tables in the specified schema
   - Parameters:
     - `catalog`: Catalog name (string, required)
@@ -124,6 +124,32 @@ The server provides the following MCP resources:
 ## Tools
 
 ### Query and Exploration Tools
+
+- **show_catalogs**
+
+  - List all available catalogs
+  - No parameters required
+
+- **show_schemas**
+
+  - List all schemas in a catalog
+  - Parameters:
+    - `catalog`: Catalog name (string, required)
+
+- **show_tables**
+
+  - List all tables in a schema
+  - Parameters:
+    - `catalog`: Catalog name (string, required)
+    - `schema`: Schema name (string, required)
+
+- **describe_table**
+
+  - Show detailed table structure and column information
+  - Parameters:
+    - `table`: Table name (string, required)
+    - `catalog`: Catalog name (string, optional)
+    - `schema`: Schema name (string, optional)
 
 - **execute_query**
 
