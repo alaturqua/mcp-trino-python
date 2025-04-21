@@ -1,5 +1,6 @@
 # MCP Trino Server
 
+[![smithery badge](https://smithery.ai/badge/@alaturqua/mcp-trino-python)](https://smithery.ai/server/@alaturqua/mcp-trino-python)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![VS Code](https://img.shields.io/badge/vscode-available-007ACC.svg?style=flat-square&logo=visual-studio-code&logoColor=white)](https://code.visualstudio.com/)
 [![Docker](https://img.shields.io/badge/docker-available-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](https://github.com/alaturqua/mcp-trino-python/pkgs/container/mcp-trino-python)
@@ -23,6 +24,14 @@ data exploration, querying, and table maintenance capabilities through a standar
 3. Docker (optional, for containerized deployment)
 
 ## Installation
+
+### Installing via Smithery
+
+To install MCP Trino Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@alaturqua/mcp-trino-python):
+
+```bash
+npx -y @smithery/cli install @alaturqua/mcp-trino-python --client claude
+```
 
 ### Running Trino Locally
 
