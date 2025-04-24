@@ -107,29 +107,6 @@ Add the following configuration to your Claude Desktop settings:
 | TRINO_HTTP_SCHEME | HTTP scheme (http/https) | http      |
 | TRINO_PASSWORD    | Trino password           | None      |
 
-## Resources
-
-The server provides the following MCP resources:
-
-### Catalog and Schema Navigation
-
-- **catalog://main** (`list_catalogs`)
-
-  - Lists all available Trino catalogs
-  - No parameters required
-
-- **schema://{catalog}** (`list_schemas`)
-
-  - Lists all schemas in the specified catalog
-  - Parameters:
-    - `catalog`: Catalog name (string, required)
-
-- **table://{catalog}/{schema}** (`list_tables`)
-  - Lists all tables in the specified schema
-  - Parameters:
-    - `catalog`: Catalog name (string, required)
-    - `schema`: Schema name (string, required)
-
 ## Tools
 
 ### Query and Exploration Tools

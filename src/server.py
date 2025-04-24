@@ -6,6 +6,7 @@ functionality through resources and tools, with special support for Iceberg tabl
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import base
+from pydantic import Field
 
 from config import load_config
 from trino_client import TrinoClient
@@ -13,38 +14,14 @@ from trino_client import TrinoClient
 # Initialize the MCP server and Trino client
 config = load_config()
 client = TrinoClient(config)
-mcp = FastMCP("Trino Explorer", dependencies=["trino", "python-dotenv", "loguru"])
 
 
-# Resources
-@mcp.resource(
-    "catalog://main",
-    name="list_catalogs",
-    description="List all available Trino catalogs",
+# Initialize the MCP server with context
+mcp = FastMCP(
+    name="Trino Explorer",
+    instructions="This Model Context Protocol (MCP) server provides access to Trino Query Engine.",
+    dependencies=["trino", "python-dotenv", "loguru"],
 )
-def list_catalogs() -> str:
-    """List all available Trino catalogs."""
-    return client.list_catalogs()
-
-
-@mcp.resource(
-    "schema://{catalog}",
-    name="list_schemas",
-    description="List all schemas in the specified catalog",
-)
-def list_schemas(catalog: str) -> str:
-    """List all schemas in a catalog."""
-    return client.list_schemas(catalog)
-
-
-@mcp.resource(
-    "table://{catalog}/{schema}",
-    name="list_tables",
-    description="List all tables in the specified schema",
-)
-def list_tables(catalog: str, schema: str) -> str:
-    """List all tables in a schema."""
-    return client.list_tables(catalog, schema)
 
 
 # Tools
@@ -55,7 +32,7 @@ def show_catalogs() -> str:
 
 
 @mcp.tool(description="List all schemas in a catalog")
-def show_schemas(catalog: str) -> str:
+def show_schemas(catalog: str = Field(description="The name of the catalog")) -> str:
     """List all schemas in a catalog.
 
     Args:
@@ -68,66 +45,81 @@ def show_schemas(catalog: str) -> str:
 
 
 @mcp.tool(description="List all tables in a schema")
-def show_tables(catalog: str, schema: str) -> str:
+def show_tables(
+    catalog: str = Field(description="The name of the catalog"),
+    schema_name: str = Field(description="The name of the schema"),
+) -> str:
     """List all tables in a schema.
 
     Args:
         catalog: The name of the catalog
-        schema: The name of the schema
+        schema_name: The name of the schema
 
     Returns:
         str: List of tables in the specified schema
     """
-    return client.list_tables(catalog, schema)
+    return client.list_tables(catalog, schema_name)
 
 
 @mcp.tool(description="Describe a table")
-def describe_table(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def describe_table(
+    catalog: str = Field(description="The catalog name"),
+    schema_name: str = Field(description="The schema name"),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Describe a table.
 
     Args:
-        table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
+        catalog (str): The catalog name
+        schema_name (str): The schema name
+        table (str): The name of the table
 
     Returns:
         str: Table description in JSON format
     """
-    return client.describe_table(table, catalog, schema)
+    return client.describe_table(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show the CREATE TABLE statement for a specific table")
-def show_create_table(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_create_table(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show the CREATE TABLE statement for a table.
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: The CREATE TABLE statement
     """
-    return client.show_create_table(table, catalog, schema)
+    return client.show_create_table(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show the CREATE VIEW statement for a specific view")
-def show_create_view(view: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_create_view(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    view: str = Field(description="The name of the view"),
+) -> str:
     """Show the CREATE VIEW statement for a view.
 
     Args:
+        catalog: catalog name
+        schema_name:  schema name
         view: The name of the view
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: The CREATE VIEW statement
     """
-    return client.show_create_view(view, catalog, schema)
+    return client.show_create_view(catalog, schema_name, view)
 
 
 @mcp.tool(description="Execute a SQL query and return results in a readable format")
-def execute_query(query: str) -> str:
+def execute_query(query: str = Field(description="The SQL query to execute")) -> str:
     """Execute a SQL query and return formatted results.
 
     Args:
@@ -140,77 +132,93 @@ def execute_query(query: str) -> str:
 
 
 @mcp.tool(description="Optimize an Iceberg table's data files")
-def optimize(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def optimize(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table to optimize"),
+) -> str:
     """Optimize an Iceberg table by compacting small files.
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table to optimize
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: Confirmation message
     """
-    return client.optimize(table, catalog, schema)
+    return client.optimize(catalog, schema_name, table)
 
 
 @mcp.tool(description="Optimize manifest files for an Iceberg table")
-def optimize_manifests(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def optimize_manifests(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Optimize manifest files for an Iceberg table.
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: Confirmation message
     """
-    return client.optimize_manifests(table, catalog, schema)
+    return client.optimize_manifests(catalog, schema_name, table)
 
 
 @mcp.tool(description="Remove old snapshots from an Iceberg table")
 def expire_snapshots(
-    table: str,
-    retention_threshold: str = "7d",
-    catalog: str | None = None,
-    schema: str | None = None,
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    retention_threshold: str = Field(
+        description="Age threshold for snapshot removal (e.g., '7d', '30d')", default="7d"
+    ),
+    table: str = Field(description="The name of the table"),
 ) -> str:
     """Remove old snapshots from an Iceberg table.
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
         retention_threshold: Age threshold for snapshot removal (e.g., "7d", "30d")
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: Confirmation message
     """
-    return client.expire_snapshots(table, retention_threshold, catalog, schema)
+    return client.expire_snapshots(catalog, schema_name, table, retention_threshold)
 
 
 @mcp.tool(description="Show statistics for a table")
-def show_stats(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_stats(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show statistics for a table.
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: Table statistics in JSON format
     """
-    return client.show_stats(table, catalog, schema)
+    return client.show_stats(catalog, schema_name, table)
 
 
 @mcp.tool(name="show_query_history", description="Get the history of executed queries")
-def show_query_history(limit: int | None = None) -> str:
+def show_query_history(
+    limit: int = Field(description="maximum number of history entries to return", default=None),
+) -> str:
     """Get the history of executed queries.
 
     Args:
-        limit: Optional maximum number of history entries to return.
+        limit: maximum number of history entries to return.
             If None, returns all entries.
 
     Returns:
@@ -230,22 +238,30 @@ def show_catalog_tree() -> str:
 
 
 @mcp.tool(description="Show Iceberg table properties")
-def show_table_properties(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_table_properties(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table properties.
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted table properties
     """
-    return client.show_table_properties(table, catalog, schema)
+    return client.show_table_properties(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show Iceberg table history/changelog")
-def show_table_history(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_table_history(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table history/changelog.
 
     The history contains:
@@ -255,18 +271,22 @@ def show_table_history(table: str, catalog: str | None = None, schema: str | Non
     - is_current_ancestor: Whether snapshot is an ancestor of current
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted table history
     """
-    return client.show_table_history(table, catalog, schema)
+    return client.show_table_history(catalog, schema_name, table)
 
 
-@mcp.tool(description="Show Iceberg table metadata log entries")
-def show_metadata_log_entries(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+@mcp.tool(description="Show metadata for the table")
+def show_metadata_log_entries(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table metadata log entries.
 
     The metadata log contains:
@@ -277,18 +297,22 @@ def show_metadata_log_entries(table: str, catalog: str | None = None, schema: st
     - latest_sequence_number: Data sequence number of metadata file
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted metadata log entries
     """
-    return client.show_metadata_log_entries(table, catalog, schema)
+    return client.show_metadata_log_entries(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show Iceberg table snapshots")
-def show_snapshots(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_snapshots(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table snapshots.
 
     The snapshots table contains:
@@ -300,19 +324,22 @@ def show_snapshots(table: str, catalog: str | None = None, schema: str | None = 
     - summary: Summary of changes from previous snapshot
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted table snapshots
     """
-    return client.show_snapshots(table, catalog, schema)
+    return client.show_snapshots(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show Iceberg table manifests")
 def show_manifests(
-    table: str, catalog: str | None = None, schema: str | None = None, all_snapshots: bool = False
+    catalog: str = Field(description="catalog name"),
+    schema_name: str = Field(description="schema name"),
+    table: str = Field(description="The name of the table"),
+    all_snapshots: bool = False,
 ) -> str:
     """Show Iceberg table manifests for current or all snapshots.
 
@@ -330,19 +357,23 @@ def show_manifests(
     - partition_summaries: Partition range metadata
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
         all_snapshots: If True, show manifests from all snapshots
 
     Returns:
         str: JSON-formatted table manifests
     """
-    return client.show_manifests(table, catalog, schema, all_snapshots)
+    return client.show_manifests(catalog, schema_name, table, all_snapshots)
 
 
 @mcp.tool(description="Show Iceberg table partitions")
-def show_partitions(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_partitions(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table partitions.
 
     The partitions table contains:
@@ -353,18 +384,22 @@ def show_partitions(table: str, catalog: str | None = None, schema: str | None =
     - data: Partition range metadata with min/max values and null/nan counts
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted table partitions
     """
-    return client.show_partitions(table, catalog, schema)
+    return client.show_partitions(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show Iceberg table data files")
-def show_files(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_files(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table data files in current snapshot.
 
     The files table contains:
@@ -384,18 +419,23 @@ def show_files(table: str, catalog: str | None = None, schema: str | None = None
     - equality_ids: Field IDs for equality deletes
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted table files info
     """
-    return client.show_files(table, catalog, schema)
+    return client.show_files(catalog, schema_name, table)
 
 
 @mcp.tool(description="Show Iceberg table manifest entries")
-def show_entries(table: str, catalog: str | None = None, schema: str | None = None, all_snapshots: bool = False) -> str:
+def show_entries(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+    all_snapshots: bool = False,
+) -> str:
     """Show Iceberg table manifest entries for current or all snapshots.
 
     The entries table contains:
@@ -407,19 +447,23 @@ def show_entries(table: str, catalog: str | None = None, schema: str | None = No
     - readable_metrics: Human-readable file metrics
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
         all_snapshots: If True, show entries from all snapshots
 
     Returns:
         str: JSON-formatted manifest entries
     """
-    return client.show_entries(table, catalog, schema, all_snapshots)
+    return client.show_entries(catalog, schema_name, table, all_snapshots)
 
 
 @mcp.tool(description="Show Iceberg table references (branches and tags)")
-def show_refs(table: str, catalog: str | None = None, schema: str | None = None) -> str:
+def show_refs(
+    catalog: str = Field(description="catalog name "),
+    schema_name: str = Field(description="schema name "),
+    table: str = Field(description="The name of the table"),
+) -> str:
     """Show Iceberg table references (branches and tags).
 
     The refs table contains:
@@ -431,20 +475,28 @@ def show_refs(table: str, catalog: str | None = None, schema: str | None = None)
     - max_snapshot_age_in_ms: Max snapshot age in branch
 
     Args:
+        catalog: catalog name
+        schema_name: schema name
         table: The name of the table
-        catalog: Optional catalog name (defaults to configured catalog)
-        schema: Optional schema name (defaults to configured schema)
 
     Returns:
         str: JSON-formatted table references
     """
-    return client.show_refs(table, catalog, schema)
+    return client.show_refs(catalog, schema_name, table)
 
 
 # Prompts
 @mcp.prompt()
-def explore_data(catalog: str | None = None, schema: str | None = None) -> list[base.Message]:
-    """Interactive prompt to explore Trino data."""
+def explore_data(catalog: str, schema_name: str) -> list[base.Message]:
+    """Interactive prompt to explore Trino data.
+
+    Args:
+        catalog: The name of the catalog to explore
+        schema_name: The name of the schema to explore
+
+    Returns:
+        list[base.Message]: A list of system and user messages to guide the conversation
+    """
     messages = [
         base.SystemMessage(
             "I'll help you explore data in Trino. I can show you available catalogs, "
@@ -452,10 +504,10 @@ def explore_data(catalog: str | None = None, schema: str | None = None) -> list[
         )
     ]
 
-    if catalog and schema:
+    if catalog and schema_name:
         messages.append(
             base.UserMessage(
-                f"Show me what tables are available in the {catalog}.{schema} schema and help me query them."
+                f"Show me what tables are available in the {catalog}.{schema_name} schema and help me query them."
             )
         )
     elif catalog:
@@ -467,7 +519,7 @@ def explore_data(catalog: str | None = None, schema: str | None = None) -> list[
 
 
 @mcp.prompt()
-def maintain_iceberg(table: str, catalog: str | None = None, schema: str | None = None) -> list[base.Message]:
+def maintain_iceberg(table: str, catalog: str, schema_name: str) -> list[base.Message]:
     """Interactive prompt for Iceberg table maintenance."""
     return [
         base.SystemMessage(
@@ -476,7 +528,7 @@ def maintain_iceberg(table: str, catalog: str | None = None, schema: str | None 
         ),
         base.UserMessage(
             f"What maintenance operations should we perform on the Iceberg table "
-            f"{catalog + '.' if catalog else ''}{schema + '.' if schema else ''}{table}?"
+            f"{catalog + '.' if catalog else ''}{schema_name + '.' if schema_name else ''}{table}?"
         ),
     ]
 
@@ -485,4 +537,4 @@ if __name__ == "__main__":
     from loguru import logger
 
     logger.info("Starting Trino MCP server...")
-    mcp.run()
+    mcp.run(transport="stdio")
