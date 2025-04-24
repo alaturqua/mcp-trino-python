@@ -69,11 +69,12 @@ class TrinoClient:
 
         Args:
             query (str): The SQL query to execute.
+            params (Optional[dict]): Dictionary of query parameters with primitive types.
 
         Returns:
             str: JSON-formatted string containing query results or success message.
         """
-        cur = self.client.cursor()
+        cur: trino.dbapi.Cursor = self.client.cursor()
         cur.execute(query)
         if cur.description:
             return json.dumps(
@@ -82,7 +83,7 @@ class TrinoClient:
             )
         return "Query executed successfully (no results to display)"
 
-    def get_query_history(self, limit: int | None = None) -> str:
+    def get_query_history(self, limit: int) -> str:
         """Retrieve the history of executed queries.
 
         Args:
@@ -105,7 +106,7 @@ class TrinoClient:
         catalogs = [row["Catalog"] for row in json.loads(self.execute_query("SHOW CATALOGS"))]
         return "\n".join(catalogs)
 
-    def list_schemas(self, catalog: str | None = None) -> str:
+    def list_schemas(self, catalog: str) -> str:
         """List all schemas in a catalog.
 
         Args:
@@ -125,7 +126,7 @@ class TrinoClient:
         schemas = [row["Schema"] for row in json.loads(self.execute_query(query))]
         return "\n".join(schemas)
 
-    def list_tables(self, catalog: str | None = None, schema: str | None = None) -> str:
+    def list_tables(self, catalog: str, schema: str) -> str:
         """List all tables in a schema.
 
         Args:
@@ -147,13 +148,13 @@ class TrinoClient:
         tables = [row["Table"] for row in json.loads(self.execute_query(query))]
         return "\n".join(tables)
 
-    def describe_table(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def describe_table(self, catalog: str, schema: str, table: str) -> str:
         """Describe the structure of a table.
 
         Args:
+            catalog (str): The catalog name. If None, uses configured default.
+            schema (str): The schema name. If None, uses configured default.
             table (str): The name of the table.
-            catalog (Optional[str]): The catalog name. If None, uses configured default.
-            schema (Optional[str]): The schema name. If None, uses configured default.
 
         Returns:
             str: JSON-formatted string containing table description.
@@ -164,17 +165,17 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         query = f"DESCRIBE {catalog}.{schema}.{table}"
         return self.execute_query(query)
 
-    def show_create_table(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_create_table(self, catalog: str, schema: str, table: str) -> str:
         """Show the CREATE TABLE statement for a table.
 
         Args:
+            schema (str): The schema name. If None, uses configured default.
+            catalog (str): The catalog name. If None, uses configured default.
             table (str): The name of the table.
-            catalog (Optional[str]): The catalog name. If None, uses configured default.
-            schema (Optional[str]): The schema name. If None, uses configured default.
 
         Returns:
             str: The CREATE TABLE statement for the specified table.
@@ -185,18 +186,23 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         query = f"SHOW CREATE TABLE {catalog}.{schema}.{table}"
         result = json.loads(self.execute_query(query))
         return result[0]["Create Table"] if result else ""
 
-    def show_create_view(self, view: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_create_view(
+        self,
+        catalog: str,
+        schema: str,
+        view: str,
+    ) -> str:
         """Show the CREATE VIEW statement for a view.
 
         Args:
+            catalog (str): The catalog name. If None, uses configured default.
+            schema (str): The schema name. If None, uses configured default.
             view (str): The name of the view.
-            catalog (Optional[str]): The catalog name. If None, uses configured default.
-            schema (Optional[str]): The schema name. If None, uses configured default.
 
         Returns:
             str: The CREATE VIEW statement for the specified view.
@@ -207,18 +213,18 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         query = f"SHOW CREATE VIEW {catalog}.{schema}.{view}"
         result = json.loads(self.execute_query(query))
         return result[0]["Create View"] if result else ""
 
-    def show_stats(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_stats(self, catalog: str, schema: str, table: str) -> str:
         """Show statistics for a table.
 
         Args:
+            catalog (str): The catalog name. If None, uses configured default.
+            schema (str): The schema name. If None, uses configured default.
             table (str): The name of the table.
-            catalog (Optional[str]): The catalog name. If None, uses configured default.
-            schema (Optional[str]): The schema name. If None, uses configured default.
 
         Returns:
             str: JSON-formatted string containing table statistics.
@@ -229,17 +235,17 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         query = f"SHOW STATS FOR {catalog}.{schema}.{table}"
         return self.execute_query(query)
 
-    def optimize(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def optimize(self, catalog: str, schema: str, table: str) -> str:
         """Optimize an Iceberg table by compacting small files.
 
         Args:
+            catalog (str): The catalog name. If None, uses configured default.
+            schema (str): The schema name. If None, uses configured default.
             table (str): The name of the table to optimize.
-            catalog (Optional[str]): The catalog name. If None, uses configured default.
-            schema (Optional[str]): The schema name. If None, uses configured default.
 
         Returns:
             str: Success message indicating the table was optimized.
@@ -250,12 +256,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         query = f"ALTER TABLE {catalog}.{schema}.{table} EXECUTE optimize"
         self.execute_query(query)
         return f"Table {catalog}.{schema}.{table} optimized successfully"
 
-    def optimize_manifests(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def optimize_manifests(self, table: str, catalog: str, schema: str) -> str:
         """Optimize manifest files for an Iceberg table.
 
         This operation reorganizes and compacts the table's manifest files for improved
@@ -275,17 +281,17 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         query = f"ALTER TABLE {catalog}.{schema}.{table} EXECUTE optimize_manifests"
         self.execute_query(query)
         return f"Manifests for table {catalog}.{schema}.{table} optimized successfully"
 
     def expire_snapshots(
         self,
+        catalog: str,
         table: str,
+        schema: str,
         retention_threshold: str = "7d",
-        catalog: str | None = None,
-        schema: str | None = None,
     ) -> str:
         """Remove old snapshots from an Iceberg table.
 
@@ -342,7 +348,7 @@ class TrinoClient:
                 tree.append("Unable to list schemas")
         return "\n".join(tree) if tree else "No catalogs found"
 
-    def show_table_properties(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_table_properties(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table properties.
 
         Args:
@@ -356,11 +362,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$properties"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        query = 'SELECT * FROM "{}$properties"'
+        table_identifier = f"{catalog}.{schema}.{table}"
+        return self.execute_query(query.format(table_identifier))
 
-    def show_table_history(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_table_history(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table history/changelog.
 
         The history contains:
@@ -380,11 +387,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$history"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        table_identifier = f"{catalog}.{schema}.{table}"
+        query = 'SELECT * FROM "{}$history"'
+        return self.execute_query(query.format(table_identifier))
 
-    def show_metadata_log_entries(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_metadata_log_entries(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table metadata log entries.
 
         The metadata log contains:
@@ -405,11 +413,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$metadata_log_entries"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        query = 'SELECT * FROM "{}$metadata_log_entries"'
+        table_identifier = f"{catalog}.{schema}.{table}"
+        return self.execute_query(query.format(table_identifier))
 
-    def show_snapshots(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_snapshots(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table snapshots.
 
         The snapshots table contains:
@@ -431,13 +440,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$snapshots"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        table_identifier = f"{catalog}.{schema}.{table}$snapshots"
+        query = 'SELECT * FROM "{}"'
+        return self.execute_query(query.format(table_identifier))
 
-    def show_manifests(
-        self, table: str, catalog: str | None = None, schema: str | None = None, all_snapshots: bool = False
-    ) -> str:
+    def show_manifests(self, table: str, catalog: str, schema: str, all_snapshots: bool = False) -> str:
         """Show Iceberg table manifests for current or all snapshots.
 
         The manifests table contains:
@@ -465,12 +473,13 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        table_name = f"{catalog}.{schema}.{table}${'all_' if all_snapshots else ''}manifests"
-        query = f'SELECT * FROM "{table_name}"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        table_type = "all_manifests" if all_snapshots else "manifests"
+        query = 'SELECT * FROM "{}${}"'
+        table_identifier = f"{catalog}.{schema}.{table}"
+        return self.execute_query(query.format(table_identifier, table_type))
 
-    def show_partitions(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_partitions(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table partitions.
 
         The partitions table contains:
@@ -491,11 +500,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$partitions"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        table_identifier = f"{catalog}.{schema}.{table}$partitions"
+        query = 'SELECT * FROM "{}"'
+        return self.execute_query(query.format(table_identifier))
 
-    def show_files(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_files(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table data files in current snapshot.
 
         The files table contains:
@@ -525,13 +535,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$files"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        table_identifier = f"{catalog}.{schema}.{table}$files"
+        query = 'SELECT * FROM "{}"'
+        return self.execute_query(query.format(table_identifier))
 
-    def show_entries(
-        self, table: str, catalog: str | None = None, schema: str | None = None, all_snapshots: bool = False
-    ) -> str:
+    def show_entries(self, table: str, catalog: str, schema: str, all_snapshots: bool = False) -> str:
         """Show Iceberg table manifest entries for current or all snapshots.
 
         The entries table contains:
@@ -554,12 +563,12 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
+            raise CatalogSchemaError
         table_name = f"{catalog}.{schema}.{table}${'all_' if all_snapshots else ''}entries"
-        query = f'SELECT * FROM "{table_name}"'
-        return self.execute_query(query)
+        query = 'SELECT * FROM "{}"'
+        return self.execute_query(query.format(table_name))
 
-    def show_refs(self, table: str, catalog: str | None = None, schema: str | None = None) -> str:
+    def show_refs(self, table: str, catalog: str, schema: str) -> str:
         """Show Iceberg table references (branches and tags).
 
         The refs table contains:
@@ -581,6 +590,7 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         schema = schema or self.config.schema
         if not catalog or not schema:
-            raise CatalogSchemaError()
-        query = f'SELECT * FROM "{catalog}.{schema}.{table}$refs"'
-        return self.execute_query(query)
+            raise CatalogSchemaError
+        table_identifier = f"{catalog}.{schema}.{table}$refs"
+        query = 'SELECT * FROM "{}"'
+        return self.execute_query(query.format(table_identifier))
