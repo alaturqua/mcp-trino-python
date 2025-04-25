@@ -18,4 +18,7 @@ ADD . /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT [ "uv", "run", "mcp", "run", "src/server.py" ]
+EXPOSE 8000
+
+ENTRYPOINT [ "uv", "run", "src/server.py" ]
+CMD [ "--host", "0.0.0.0", "--port", "8000" ]   
