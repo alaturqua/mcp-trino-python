@@ -1,0 +1,13 @@
+.env
+.venv/
+.vscode/
+.github/
+dist/
+__pycache__/
+*.egg-info/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+docker-compose.yaml
