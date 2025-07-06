@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/alaturqua-mcp-trino-python-badge.png)](https://mseep.ai/app/alaturqua-mcp-trino-python)
+
 # MCP Trino Server
 
 [![smithery badge](https://smithery.ai/badge/@alaturqua/mcp-trino-python)](https://smithery.ai/server/@alaturqua/mcp-trino-python)
