@@ -4,15 +4,9 @@ This module provides a Model Context Protocol (MCP) server that exposes Trino
 functionality through resources and tools, with special support for Iceberg tables.
 """
 
-import uvicorn
-from mcp.server import Server
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import base
-from mcp.server.sse import SseServerTransport
 from pydantic import Field
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.routing import Mount, Route
 
 from config import load_config
 from trino_client import TrinoClient
@@ -492,7 +486,7 @@ def show_refs(
 
 
 # Prompts
-@mcp.prompt()
+@mcp.prompt(title="Explore Trino Data")
 def explore_data(catalog: str, schema_name: str) -> list[base.Message]:
     """Interactive prompt to explore Trino data.
 
@@ -501,10 +495,10 @@ def explore_data(catalog: str, schema_name: str) -> list[base.Message]:
         schema_name: The name of the schema to explore
 
     Returns:
-        list[base.Message]: A list of system and user messages to guide the conversation
+        list[base.Message]: A list of messages to guide the conversation
     """
     messages = [
-        base.SystemMessage(
+        base.AssistantMessage(
             "I'll help you explore data in Trino. I can show you available catalogs, "
             "schemas, and tables, and help you query the data."
         )
@@ -524,11 +518,11 @@ def explore_data(catalog: str, schema_name: str) -> list[base.Message]:
     return messages
 
 
-@mcp.prompt()
+@mcp.prompt(title="Maintain Iceberg Table")
 def maintain_iceberg(table: str, catalog: str, schema_name: str) -> list[base.Message]:
     """Interactive prompt for Iceberg table maintenance."""
     return [
-        base.SystemMessage(
+        base.AssistantMessage(
             "I'll help you maintain an Iceberg table. I can help with optimization, "
             "cleaning up snapshots and orphan files, and viewing table metadata."
         ),
@@ -539,46 +533,24 @@ def maintain_iceberg(table: str, catalog: str, schema_name: str) -> list[base.Me
     ]
 
 
-def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
-    """Create a Starlette application that can server the provied mcp server with SSE."""
-    sse = SseServerTransport("/messages/")
-
-    async def handle_sse(request: Request) -> None:
-        async with sse.connect_sse(
-            request.scope,
-            request.receive,
-            request._send,  # noqa: SLF001
-        ) as (read_stream, write_stream):
-            await mcp_server.run(
-                read_stream,
-                write_stream,
-                mcp_server.create_initialization_options(),
-            )
-
-    return Starlette(
-        debug=debug,
-        routes=[
-            Route("/sse", endpoint=handle_sse),
-            Mount("/messages/", app=sse.handle_post_message),
-        ],
-    )
-
-
 if __name__ == "__main__":
     import argparse
 
     from loguru import logger
 
     logger.info("Starting Trino MCP server...")
-    mcp_server = mcp._mcp_server  # noqa: SLF001
 
-    parser = argparse.ArgumentParser(description="Run MCP Trino Server as a SSE-based server")
+    parser = argparse.ArgumentParser(description="Run MCP Trino Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to listen on")
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "streamable-http", "sse"],
+        default="stdio",
+        help="Transport type to use (default: stdio)",
+    )
     args = parser.parse_args()
 
-    # Bind SSE request handling to MCP server
-    starlette_app = create_starlette_app(mcp_server, debug=True)
-    # Run the server with Uvicorn
-    uvicorn.run(starlette_app, host=args.host, port=args.port)
+    # Run the server with the specified transport
+    mcp.run(transport=args.transport, host=args.host, port=args.port)
     logger.info("Trino MCP server is running.")
