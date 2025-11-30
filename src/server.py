@@ -553,4 +553,3 @@ if __name__ == "__main__":
 
     # Run the server with the specified transport
     mcp.run(transport=args.transport, host=args.host, port=args.port)
-    logger.info("Trino MCP server is running.")
