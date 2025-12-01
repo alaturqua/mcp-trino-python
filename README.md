@@ -80,11 +80,11 @@ python src/server.py
 
 The server supports three transport modes:
 
-| Transport | Description | Use Case |
-|-----------|-------------|----------|
-| `stdio` | Standard I/O (default) | VS Code, Claude Desktop, local MCP clients |
-| `streamable-http` | HTTP with streaming | Remote access, web clients, Docker |
-| `sse` | Server-Sent Events | Legacy HTTP transport |
+| Transport         | Description            | Use Case                                   |
+| ----------------- | ---------------------- | ------------------------------------------ |
+| `stdio`           | Standard I/O (default) | VS Code, Claude Desktop, local MCP clients |
+| `streamable-http` | HTTP with streaming    | Remote access, web clients, Docker         |
+| `sse`             | Server-Sent Events     | Legacy HTTP transport                      |
 
 ### Running with Different Transports
 
@@ -111,10 +111,14 @@ Add to your VS Code settings (`Ctrl+Shift+P` → `Preferences: Open User Setting
         "command": "uv",
         "args": [
           "run",
-          "--with", "mcp[cli]",
-          "--with", "trino",
-          "--with", "loguru",
-          "mcp", "run",
+          "--with",
+          "mcp[cli]",
+          "--with",
+          "trino",
+          "--with",
+          "loguru",
+          "mcp",
+          "run",
           "/path/to/mcp-trino-python/src/server.py"
         ],
         "envFile": "/path/to/mcp-trino-python/.env"
@@ -196,11 +200,17 @@ docker-compose --profile stdio run --rm mcp-trino-stdio
       "mcp-trino-python": {
         "command": "docker",
         "args": [
-          "run", "-i", "--rm",
-          "--network", "mcp-trino-python_trino-network",
-          "-e", "TRINO_HOST=trino",
-          "-e", "TRINO_PORT=8080",
-          "-e", "TRINO_USER=trino",
+          "run",
+          "-i",
+          "--rm",
+          "--network",
+          "mcp-trino-python_trino-network",
+          "-e",
+          "TRINO_HOST=trino",
+          "-e",
+          "TRINO_PORT=8080",
+          "-e",
+          "TRINO_USER=trino",
           "mcp-trino-python"
         ]
       }
