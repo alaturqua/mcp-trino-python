@@ -1,7 +1,7 @@
 # MCP Trino Server
 
 [![smithery badge](https://smithery.ai/badge/@alaturqua/mcp-trino-python)](https://smithery.ai/server/@alaturqua/mcp-trino-python)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![VS Code](https://img.shields.io/badge/vscode-available-007ACC.svg?style=flat-square&logo=visual-studio-code&logoColor=white)](https://code.visualstudio.com/)
 [![Docker](https://img.shields.io/badge/docker-available-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](https://github.com/alaturqua/mcp-trino-python/pkgs/container/mcp-trino-python)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
@@ -20,8 +20,37 @@ data exploration, querying, and table maintenance capabilities through a standar
 ## Prerequisites
 
 1. A running Trino server (or Docker Compose for local development)
-2. Python 3.11 or higher
+2. Python 3.12 or higher
 3. Docker (optional, for containerized deployment)
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/alaturqua/mcp-trino-python.git
+cd mcp-trino-python
+```
+
+### 2. Create Environment File
+
+Create a `.env` file in the root directory:
+
+```bash
+TRINO_HOST=localhost
+TRINO_PORT=8080
+TRINO_USER=trino
+TRINO_CATALOG=tpch
+TRINO_SCHEMA=tiny
+```
+
+### 3. Run Trino Locally (Optional)
+
+```bash
+docker-compose up -d trino
+```
+
+This starts a Trino server on `localhost:8080` with sample TPC-H and TPC-DS data.
 
 ## Installation
 
@@ -33,49 +62,77 @@ To install MCP Trino Server for Claude Desktop automatically via [Smithery](http
 npx -y @smithery/cli install @alaturqua/mcp-trino-python --client claude
 ```
 
-### Running Trino Locally
-
-The easiest way to get started is to use the included Docker Compose configuration to run Trino locally:
+### Using uv (Recommended)
 
 ```bash
-docker-compose up -d
+uv sync
+uv run src/server.py
 ```
 
-This will start a Trino server on `localhost:8080`. You can now proceed with configuring the MCP server.
+### Using pip
 
-### Usage with VS Code
+```bash
+pip install -e .
+python src/server.py
+```
 
-For quick installation, you can add the following configuration to your VS Code settings. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
+## Transport Modes
 
-Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
+The server supports three transport modes:
 
-> Note that the `mcp` key is not needed in the `.vscode/mcp.json` file.
+| Transport         | Description            | Use Case                                   |
+| ----------------- | ---------------------- | ------------------------------------------ |
+| `stdio`           | Standard I/O (default) | VS Code, Claude Desktop, local MCP clients |
+| `streamable-http` | HTTP with streaming    | Remote access, web clients, Docker         |
+| `sse`             | Server-Sent Events     | Legacy HTTP transport                      |
+
+### Running with Different Transports
+
+```bash
+# stdio (default) - for VS Code and Claude Desktop
+python src/server.py
+
+# Streamable HTTP - for remote/web access
+python src/server.py --transport streamable-http --host 0.0.0.0 --port 8000
+
+# SSE - legacy HTTP transport
+python src/server.py --transport sse --host 0.0.0.0 --port 8000
+```
+
+## Usage with VS Code
+
+Add to your VS Code settings (`Ctrl+Shift+P` → `Preferences: Open User Settings (JSON)`):
 
 ```json
 {
   "mcp": {
     "servers": {
-      "trino": {
-        "command": "docker",
-        "args": ["run", "--rm", "ghcr.io/alaturqua/mcp-trino-python:latest"],
-        "env": {
-          "TRINO_HOST": "${input:trino_host}",
-          "TRINO_PORT": "${input:trino_port}",
-          "TRINO_USER": "${input:trino_user}",
-          "TRINO_PASSWORD": "${input:trino_password}",
-          "TRINO_HTTP_SCHEME": "${input:trino_http_scheme}",
-          "TRINO_CATALOG": "${input:trino_catalog}",
-          "TRINO_SCHEMA": "${input:trino_schema}"
-        }
+      "mcp-trino-python": {
+        "command": "uv",
+        "args": [
+          "run",
+          "--with",
+          "mcp[cli]",
+          "--with",
+          "trino",
+          "--with",
+          "loguru",
+          "mcp",
+          "run",
+          "/path/to/mcp-trino-python/src/server.py"
+        ],
+        "envFile": "/path/to/mcp-trino-python/.env"
       }
     }
   }
 }
 ```
 
-### Usage with Claude Desktop
+Or add to `.vscode/mcp.json` in your workspace (without the `mcp` wrapper key).
 
-Add the following configuration to your Claude Desktop settings:
+## Usage with Claude Desktop
+
+Add to your Claude Desktop configuration:
 
 ```json
 {
@@ -93,18 +150,74 @@ Add the following configuration to your Claude Desktop settings:
 }
 ```
 
-### Running as HTTP Server
+## Docker Usage
 
-You can run the server with the `streamable-http` transport for HTTP-based access:
+### Build the Image
 
 ```bash
-python src/server.py --transport streamable-http --host 0.0.0.0 --port 8000
+docker build -t mcp-trino-python .
 ```
 
-Available transport options:
-- `stdio` (default): Standard input/output, recommended for Claude Desktop
-- `streamable-http`: HTTP-based transport with streaming support
-- `sse`: Server-Sent Events transport
+### Run with stdio (for VS Code)
+
+```bash
+docker run -i --rm \
+  -e TRINO_HOST=host.docker.internal \
+  -e TRINO_PORT=8080 \
+  -e TRINO_USER=trino \
+  mcp-trino-python
+```
+
+### Run with Streamable HTTP
+
+```bash
+docker run -p 8000:8000 \
+  -e TRINO_HOST=host.docker.internal \
+  -e TRINO_PORT=8080 \
+  mcp-trino-python \
+  --transport streamable-http --host 0.0.0.0 --port 8000
+```
+
+### Docker Compose
+
+```bash
+# Start Trino + MCP server with Streamable HTTP
+docker-compose up -d
+
+# Start with SSE transport
+docker-compose --profile sse up -d
+
+# Run stdio for testing
+docker-compose --profile stdio run --rm mcp-trino-stdio
+```
+
+### VS Code with Docker
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "mcp-trino-python": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "--network",
+          "mcp-trino-python_trino-network",
+          "-e",
+          "TRINO_HOST=trino",
+          "-e",
+          "TRINO_PORT=8080",
+          "-e",
+          "TRINO_USER=trino",
+          "mcp-trino-python"
+        ]
+      }
+    }
+  }
+}
+```
 
 ## Configuration
 
