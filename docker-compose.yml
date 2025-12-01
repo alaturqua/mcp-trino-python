@@ -15,7 +15,7 @@ services:
   # Usage: docker-compose up mcp-trino-http
   mcp-trino-http:
     build: .
-    command: ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["--transport", "streamable-http"]
     ports:
       - "8000:8000"
     environment:
@@ -24,6 +24,8 @@ services:
       - TRINO_USER=trino
       - TRINO_CATALOG=tpch
       - TRINO_SCHEMA=tiny
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
     depends_on:
       trino:
         condition: service_healthy
@@ -35,7 +37,7 @@ services:
   # Usage: docker-compose --profile sse up mcp-trino-sse
   mcp-trino-sse:
     build: .
-    command: ["--transport", "sse", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["--transport", "sse"]
     ports:
       - "8001:8000"
     environment:
@@ -44,6 +46,8 @@ services:
       - TRINO_USER=trino
       - TRINO_CATALOG=tpch
       - TRINO_SCHEMA=tiny
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
     depends_on:
       trino:
         condition: service_healthy

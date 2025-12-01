@@ -5,7 +5,10 @@ WORKDIR /app
 # Environment variables
 ENV UV_COMPILE_BYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    # MCP server defaults for HTTP transports
+    MCP_HOST=0.0.0.0 \
+    MCP_PORT=8000
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -31,5 +34,5 @@ ENTRYPOINT ["uv", "run", "src/server.py"]
 
 # Default arguments (can be overridden)
 # For stdio (default MCP transport): no args needed
-# For HTTP: --transport streamable-http --host 0.0.0.0 --port 8000
+# For HTTP: --transport streamable-http
 CMD ["--transport", "stdio"]
