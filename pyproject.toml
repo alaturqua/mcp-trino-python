@@ -10,7 +10,7 @@ dependencies = [
     "loguru>=0.7.3",
     "mcp[cli]>=1.22.0",
     "python-dotenv>=1.1.0",
-    "trino>=0.333.0",
+    "trino>=0.336.0",
 ]
 
 classifiers = [
