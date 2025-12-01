@@ -4,6 +4,8 @@ This module provides a Model Context Protocol (MCP) server that exposes Trino
 functionality through resources and tools, with special support for Iceberg tables.
 """
 
+import os
+
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import base
 from pydantic import Field
@@ -16,11 +18,16 @@ config = load_config()
 client = TrinoClient(config)
 
 
-# Initialize the MCP server with context
+# Initialize the MCP server with recommended settings for all transports
 mcp = FastMCP(
     name="Trino Explorer",
     instructions="This Model Context Protocol (MCP) server provides access to Trino Query Engine.",
-    dependencies=["trino", "python-dotenv", "loguru"],
+    # HTTP transport settings (used by streamable-http and sse)
+    host=os.getenv("MCP_HOST", "127.0.0.1"),
+    port=int(os.getenv("MCP_PORT", "8000")),
+    # Recommended for production HTTP deployments
+    stateless_http=True,
+    json_response=True,
 )
 
 
@@ -561,17 +568,21 @@ Examples:
 
   # Run with SSE transport
   python server.py --transport sse --host 127.0.0.1 --port 8001
+
+Environment variables:
+  MCP_HOST         Default host for HTTP transports (default: 127.0.0.1)
+  MCP_PORT         Default port for HTTP transports (default: 8000)
         """,
     )
     parser.add_argument(
         "--host",
-        default="127.0.0.1",
+        default=None,
         help="Host to bind to (default: 127.0.0.1, use 0.0.0.0 for all interfaces)",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
+        default=None,
         help="Port to listen on (default: 8000)",
     )
     parser.add_argument(
@@ -582,22 +593,25 @@ Examples:
     )
     args = parser.parse_args()
 
+    # Update settings if CLI args provided (override env vars)
+    if args.host:
+        mcp.settings.host = args.host
+    if args.port:
+        mcp.settings.port = args.port
+
     logger.info(f"Starting Trino MCP server with {args.transport} transport")
 
     if args.transport == "stdio":
         logger.info("Using stdio transport for local MCP communication")
         mcp.run(transport="stdio")
     elif args.transport == "streamable-http":
-        logger.info(f"Starting Streamable HTTP server on http://{args.host}:{args.port}/mcp")
-        mcp.run(transport="streamable-http", host=args.host, port=args.port)
+        logger.info(f"Starting Streamable HTTP server on http://{mcp.settings.host}:{mcp.settings.port}/mcp")
+        mcp.run(transport="streamable-http")
     elif args.transport == "sse":
-        logger.info(f"Starting SSE server on http://{args.host}:{args.port}/sse")
-        mcp.run(transport="sse", host=args.host, port=args.port)
+        logger.info(f"Starting SSE server on http://{mcp.settings.host}:{mcp.settings.port}/sse")
+        mcp.run(transport="sse")
 
 
 def main():
     """Entry point for the MCP Trino server."""
-    import sys
-
-    sys.argv = sys.argv[:1]  # Reset args for mcp.run
     mcp.run(transport="stdio")
