@@ -93,6 +93,19 @@ Add the following configuration to your Claude Desktop settings:
 }
 ```
 
+### Running as HTTP Server
+
+You can run the server with the `streamable-http` transport for HTTP-based access:
+
+```bash
+python src/server.py --transport streamable-http --host 0.0.0.0 --port 8000
+```
+
+Available transport options:
+- `stdio` (default): Standard input/output, recommended for Claude Desktop
+- `streamable-http`: HTTP-based transport with streaming support
+- `sse`: Server-Sent Events transport
+
 ## Configuration
 
 ### Environment Variables
