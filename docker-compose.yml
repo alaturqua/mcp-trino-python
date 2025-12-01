@@ -2,9 +2,77 @@ services:
   trino:
     image: trinodb/trino:latest
     ports:
-      - 8080:8080
+      - "8080:8080"
     networks:
       - trino-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MCP Server with Streamable HTTP transport (recommended for web/remote access)
+  # Usage: docker-compose up mcp-trino-http
+  mcp-trino-http:
+    build: .
+    command: ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      - TRINO_HOST=trino
+      - TRINO_PORT=8080
+      - TRINO_USER=trino
+      - TRINO_CATALOG=tpch
+      - TRINO_SCHEMA=tiny
+    depends_on:
+      trino:
+        condition: service_healthy
+    networks:
+      - trino-network
+    restart: unless-stopped
+
+  # MCP Server with SSE transport (legacy HTTP transport)
+  # Usage: docker-compose --profile sse up mcp-trino-sse
+  mcp-trino-sse:
+    build: .
+    command: ["--transport", "sse", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8001:8000"
+    environment:
+      - TRINO_HOST=trino
+      - TRINO_PORT=8080
+      - TRINO_USER=trino
+      - TRINO_CATALOG=tpch
+      - TRINO_SCHEMA=tiny
+    depends_on:
+      trino:
+        condition: service_healthy
+    networks:
+      - trino-network
+    profiles:
+      - sse
+    restart: unless-stopped
+
+  # MCP Server with stdio transport (for testing with docker exec)
+  # Usage: docker-compose --profile stdio run --rm mcp-trino-stdio
+  mcp-trino-stdio:
+    build: .
+    command: ["--transport", "stdio"]
+    environment:
+      - TRINO_HOST=trino
+      - TRINO_PORT=8080
+      - TRINO_USER=trino
+      - TRINO_CATALOG=tpch
+      - TRINO_SCHEMA=tiny
+    depends_on:
+      trino:
+        condition: service_healthy
+    networks:
+      - trino-network
+    profiles:
+      - stdio
+    stdin_open: true
+    tty: true
 
 networks:
   trino-network:

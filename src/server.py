@@ -535,21 +535,69 @@ def maintain_iceberg(table: str, catalog: str, schema_name: str) -> list[base.Me
 
 if __name__ == "__main__":
     import argparse
+    import sys
 
     from loguru import logger
 
-    logger.info("Starting Trino MCP server...")
+    # Configure logging
+    logger.remove()
+    logger.add(sys.stderr, level="INFO", format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
 
-    parser = argparse.ArgumentParser(description="Run MCP Trino Server")
-    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
-    parser.add_argument("--port", type=int, default=8000, help="Port to listen on")
+    parser = argparse.ArgumentParser(
+        description="MCP Trino Server - Model Context Protocol connector for Trino",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Transport modes:
+  stdio            Standard I/O (default) - for local MCP clients like VS Code
+  streamable-http  HTTP with streaming support (recommended for remote/web access)
+  sse              Server-Sent Events (legacy HTTP transport)
+
+Examples:
+  # Run with stdio (default, for VS Code integration)
+  python server.py
+
+  # Run with Streamable HTTP on port 8000
+  python server.py --transport streamable-http --host 0.0.0.0 --port 8000
+
+  # Run with SSE transport
+  python server.py --transport sse --host 127.0.0.1 --port 8001
+        """,
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to bind to (default: 127.0.0.1, use 0.0.0.0 for all interfaces)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to listen on (default: 8000)",
+    )
     parser.add_argument(
         "--transport",
         choices=["stdio", "streamable-http", "sse"],
         default="stdio",
-        help="Transport type to use (default: stdio)",
+        help="Transport type (default: stdio)",
     )
     args = parser.parse_args()
 
-    # Run the server with the specified transport
-    mcp.run(transport=args.transport, host=args.host, port=args.port)
+    logger.info(f"Starting Trino MCP server with {args.transport} transport")
+
+    if args.transport == "stdio":
+        logger.info("Using stdio transport for local MCP communication")
+        mcp.run(transport="stdio")
+    elif args.transport == "streamable-http":
+        logger.info(f"Starting Streamable HTTP server on http://{args.host}:{args.port}/mcp")
+        mcp.run(transport="streamable-http", host=args.host, port=args.port)
+    elif args.transport == "sse":
+        logger.info(f"Starting SSE server on http://{args.host}:{args.port}/sse")
+        mcp.run(transport="sse", host=args.host, port=args.port)
+
+
+def main():
+    """Entry point for the MCP Trino server."""
+    import sys
+
+    sys.argv = sys.argv[:1]  # Reset args for mcp.run
+    mcp.run(transport="stdio")
