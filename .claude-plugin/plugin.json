@@ -1,6 +1,6 @@
 {
   "name": "trino",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Query Trino and inspect or maintain Iceberg tables",
   "author": { "name": "alaturqua" },
   "homepage": "https://github.com/alaturqua/mcp-trino-python",
