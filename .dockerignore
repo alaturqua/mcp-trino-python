@@ -10,4 +10,7 @@ __pycache__/
 *.pyd
 *.db
 
-docker-compose.yaml
+docker-compose.yml
+tests/
+.claude-plugin/
+plugins/
