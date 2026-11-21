@@ -1,11 +1,11 @@
 [project]
 name = "mcp-trino-python"
-version = "0.7.1"
+version = "0.8.0"
 description = "A Model Context Protocol (MCP) connector for Trino, enabling seamless integration between MCP-compliant services and Trino query engine"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.12"
-keywords = ["trino", "connector", "mcp", "iceberg", "data-catalog"]
+keywords = ["trino", "connector", "mcp", "mcp-server", "iceberg", "data-catalog", "fastmcp"]
 classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: Apache Software License",
@@ -15,18 +15,18 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "loguru>=0.7.3",
-    "mcp[cli]>=1.22.0",
+    "fastmcp>=4.2.4,<4.3",
     "python-dotenv>=1.2.1",
     "trino>=0.336.0",
 ]
 
-[project.optional-dependencies]
-# For running HTTP-based transports (streamable-http, sse)
-http = ["uvicorn>=0.32.0", "starlette>=0.41.0"]
+[project.urls]
+Homepage = "https://github.com/alaturqua/mcp-trino-python"
+Issues = "https://github.com/alaturqua/mcp-trino-python/issues"
 
 [project.scripts]
-mcp-trino = "server:main"
+mcp-trino = "mcp_trino.server:main"
+mcp-trino-python = "mcp_trino.server:main"
 
 [tool.uv]
 package = true
@@ -36,9 +36,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/mcp_trino"]
 
-[tool.black]
-target-version = ["py312"]
-line-length = 120
-skip-string-normalization = true
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

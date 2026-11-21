@@ -1,0 +1,36 @@
+{
+  "name": "trino",
+  "version": "0.8.0",
+  "description": "Query Trino and inspect or maintain Iceberg tables",
+  "author": { "name": "alaturqua" },
+  "homepage": "https://github.com/alaturqua/mcp-trino-python",
+  "repository": "https://github.com/alaturqua/mcp-trino-python",
+  "license": "Apache-2.0",
+  "keywords": ["trino", "iceberg", "sql", "mcp"],
+  "mcpServers": {
+    "trino": {
+      "command": "uvx",
+      "args": ["mcp-trino-python"],
+      "env": {
+        "TRINO_HOST": "${user_config.trino_host}",
+        "TRINO_PORT": "${user_config.trino_port}",
+        "TRINO_USER": "${user_config.trino_user}",
+        "TRINO_PASSWORD": "${user_config.trino_password}",
+        "TRINO_HTTP_SCHEME": "${user_config.trino_http_scheme}",
+        "TRINO_CATALOG": "${user_config.trino_catalog}",
+        "TRINO_SCHEMA": "${user_config.trino_schema}",
+        "TRINO_READ_ONLY": "${user_config.trino_read_only}"
+      }
+    }
+  },
+  "userConfig": {
+    "trino_host": { "type": "string", "title": "Trino host", "description": "Trino server hostname", "required": true, "default": "localhost" },
+    "trino_port": { "type": "number", "title": "Trino port", "description": "Trino server port", "default": 8080 },
+    "trino_user": { "type": "string", "title": "Trino user", "description": "Trino username", "required": true, "default": "trino" },
+    "trino_password": { "type": "string", "title": "Trino password", "description": "Optional; enables basic auth (use with https)", "sensitive": true, "default": "" },
+    "trino_http_scheme": { "type": "string", "title": "HTTP scheme", "description": "http or https", "default": "http", "options": ["http", "https"] },
+    "trino_catalog": { "type": "string", "title": "Default catalog", "description": "Optional default catalog", "default": "" },
+    "trino_schema": { "type": "string", "title": "Default schema", "description": "Optional default schema", "default": "" },
+    "trino_read_only": { "type": "boolean", "title": "Read-only", "description": "Allow only read statements and hide maintenance tools", "default": false }
+  }
+}
