@@ -1,0 +1,44 @@
+site_name: MCP Trino Server
+site_description: Connect Claude, GitHub Copilot and other AI assistants to Trino and Iceberg.
+site_url: https://alaturqua.github.io/mcp-trino-python/
+repo_url: https://github.com/alaturqua/mcp-trino-python
+repo_name: alaturqua/mcp-trino-python
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.instant
+    - navigation.footer
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: { icon: material/weather-sunny, name: Light mode }
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed: { alternate_style: true }
+  - tables
+  - toc: { permalink: true }
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Connect your AI client: clients.md
+  - Configuration: configuration.md
+  - Tools and prompts: tools.md
+  - Remote and Docker deployment: deployment.md
+  - Development: development.md
