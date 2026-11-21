@@ -1,0 +1,12 @@
+{
+  "name": "mcp-trino-python",
+  "description": "Trino and Iceberg tools for Claude Code",
+  "owner": { "name": "alaturqua" },
+  "plugins": [
+    {
+      "name": "trino",
+      "source": "./",
+      "description": "Query Trino and inspect or maintain Iceberg tables"
+    }
+  ]
+}

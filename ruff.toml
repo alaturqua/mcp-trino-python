@@ -1,7 +1,7 @@
 line-length = 120
 cache-dir = "~/.cache/ruff"
-exclude = [".venv", "code/tests", "docs", "scripts"]
-target-version = "py311"
+exclude = [".venv", "tests", "docs", "scripts"]
+target-version = "py312"
 
 [lint]
 select = ["ALL", "I"]
@@ -21,6 +21,12 @@ ignore = [
     "TD",
     "FIX",
     "G004",
+    "D102",   # thin client methods; tools are documented in server.py
+    "CPY001",
+    "TRY003",
+    "EM101",
+    "EM102",
+    "S608",   # Trino cannot bind identifiers; values are validated where needed
     # formatter does not support:
     "COM812",
     "ISC001",
@@ -34,7 +40,10 @@ unfixable = [
 convention = "google"
 
 [lint.flake8-tidy-imports]
-ban-relative-imports = "all"
+ban-relative-imports = "parents"
 
 [lint.flake8-annotations]
 suppress-none-returning = true
+
+[lint.per-file-ignores]
+"tests/**" = ["S101", "D", "ANN", "INP001", "PLC0415", "ARG002"]

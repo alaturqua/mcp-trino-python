@@ -1,29 +1,89 @@
-# publish.yml
-
-name: "Publish"
+name: Publish
 
 on:
   release:
-    types: ["published"]
+    types: [published]
 
 jobs:
-  run:
-    name: "Build and publish release"
+  pypi:
+    name: Publish to PyPI
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # PyPI Trusted Publishing (OIDC), no token needed
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: uv.lock
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Check tag matches version
+        run: test "v$(uv version --short)" = "${GITHUB_REF_NAME}"
 
       - name: Build
         run: uv build
 
       - name: Publish
-        run: uv publish -t ${{ secrets.PYPI_TOKEN }}
+        run: uv publish
+
+  image:
+    name: Publish image to ghcr.io
+    uses: ./.github/workflows/docker.yml
+    permissions:
+      contents: read
+      packages: write
+
+  mcp-registry:
+    name: Publish to MCP Registry
+    needs: [pypi, image]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # GitHub OIDC login to the registry
+      contents: read
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set server.json version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          jq --arg v "$VERSION" '.version = $v
+            | .packages[0].version = $v
+            | .packages[1].identifier = "ghcr.io/alaturqua/mcp-trino-python:\($v)"' server.json > server.tmp
+          mv server.tmp server.json
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Publish
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+
+  mcpb:
+    name: Attach Claude Desktop extension (.mcpb) to the release
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # upload the release asset
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build bundle
+        run: |
+          npm install -g @anthropic-ai/mcpb@2.1.2
+          jq --arg v "${GITHUB_REF_NAME#v}" '.version = $v' mcpb/manifest.json > m.tmp && mv m.tmp mcpb/manifest.json
+          sh mcpb/pack.sh
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/mcp-trino-python.mcpb --clobber

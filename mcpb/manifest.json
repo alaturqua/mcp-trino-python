@@ -1,0 +1,200 @@
+{
+  "manifest_version": "0.4",
+  "name": "mcp-trino-python",
+  "display_name": "Trino",
+  "version": "0.8.0",
+  "description": "Query Trino and inspect or maintain Iceberg tables",
+  "long_description": "Browse Trino catalogs, schemas and tables, run SQL, and inspect or maintain Iceberg tables (snapshots, manifests, partitions, files). Supports a read-only mode.",
+  "author": {
+    "name": "alaturqua",
+    "url": "https://github.com/alaturqua"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alaturqua/mcp-trino-python"
+  },
+  "homepage": "https://github.com/alaturqua/mcp-trino-python",
+  "support": "https://github.com/alaturqua/mcp-trino-python/issues",
+  "server": {
+    "type": "uv",
+    "entry_point": "src/mcp_trino/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "--frozen",
+        "--no-dev",
+        "mcp-trino"
+      ],
+      "env": {
+        "TRINO_HOST": "${user_config.trino_host}",
+        "TRINO_PORT": "${user_config.trino_port}",
+        "TRINO_USER": "${user_config.trino_user}",
+        "TRINO_PASSWORD": "${user_config.trino_password}",
+        "TRINO_HTTP_SCHEME": "${user_config.trino_http_scheme}",
+        "TRINO_CATALOG": "${user_config.trino_catalog}",
+        "TRINO_SCHEMA": "${user_config.trino_schema}",
+        "TRINO_READ_ONLY": "${user_config.trino_read_only}"
+      }
+    }
+  },
+  "user_config": {
+    "trino_host": {
+      "type": "string",
+      "title": "Trino host",
+      "description": "Trino server hostname",
+      "required": true,
+      "default": "localhost"
+    },
+    "trino_port": {
+      "type": "number",
+      "title": "Trino port",
+      "description": "Trino server port",
+      "default": 8080
+    },
+    "trino_user": {
+      "type": "string",
+      "title": "Trino user",
+      "description": "Trino username",
+      "required": true,
+      "default": "trino"
+    },
+    "trino_password": {
+      "type": "string",
+      "title": "Trino password",
+      "description": "Optional; enables basic auth (use with https)",
+      "sensitive": true
+    },
+    "trino_http_scheme": {
+      "type": "string",
+      "title": "HTTP scheme",
+      "description": "http or https",
+      "default": "http"
+    },
+    "trino_catalog": {
+      "type": "string",
+      "title": "Default catalog",
+      "description": "Optional default catalog"
+    },
+    "trino_schema": {
+      "type": "string",
+      "title": "Default schema",
+      "description": "Optional default schema"
+    },
+    "trino_read_only": {
+      "type": "boolean",
+      "title": "Read-only",
+      "description": "Allow only read statements and hide maintenance tools",
+      "default": false
+    }
+  },
+  "tools": [
+    {
+      "name": "show_catalogs",
+      "description": "List all available catalogs."
+    },
+    {
+      "name": "show_schemas",
+      "description": "List all schemas in a catalog."
+    },
+    {
+      "name": "show_tables",
+      "description": "List all tables in a schema."
+    },
+    {
+      "name": "describe_table",
+      "description": "Describe a table's columns and types (JSON)."
+    },
+    {
+      "name": "show_create_table",
+      "description": "Show the CREATE TABLE statement for a table."
+    },
+    {
+      "name": "show_create_view",
+      "description": "Show the CREATE VIEW statement for a view."
+    },
+    {
+      "name": "show_stats",
+      "description": "Show column statistics for a table (JSON)."
+    },
+    {
+      "name": "show_catalog_tree",
+      "description": "Show a hierarchical tree of all catalogs, schemas and tables. Can be slow on large installations."
+    },
+    {
+      "name": "show_query_history",
+      "description": "Show recently executed queries from system.runtime.queries, newest first (JSON)."
+    },
+    {
+      "name": "execute_query",
+      "description": "Execute a SQL statement and return the rows as JSON."
+    },
+    {
+      "name": "optimize",
+      "description": "Compact small data files of an Iceberg table."
+    },
+    {
+      "name": "optimize_manifests",
+      "description": "Rewrite and compact the manifest files of an Iceberg table."
+    },
+    {
+      "name": "expire_snapshots",
+      "description": "Remove Iceberg snapshots older than the retention threshold."
+    },
+    {
+      "name": "show_table_properties",
+      "description": "Show Iceberg table properties (JSON)."
+    },
+    {
+      "name": "show_table_history",
+      "description": "Show Iceberg table history (JSON)."
+    },
+    {
+      "name": "show_metadata_log_entries",
+      "description": "Show Iceberg metadata log entries (JSON)."
+    },
+    {
+      "name": "show_snapshots",
+      "description": "Show Iceberg table snapshots (JSON)."
+    },
+    {
+      "name": "show_manifests",
+      "description": "Show Iceberg manifest files (JSON)."
+    },
+    {
+      "name": "show_partitions",
+      "description": "Show Iceberg table partitions (JSON)."
+    },
+    {
+      "name": "show_files",
+      "description": "Show Iceberg data files in the current snapshot (JSON)."
+    },
+    {
+      "name": "show_entries",
+      "description": "Show Iceberg manifest entries (JSON)."
+    },
+    {
+      "name": "show_refs",
+      "description": "Show Iceberg table references, i.e. branches and tags (JSON)."
+    }
+  ],
+  "keywords": [
+    "trino",
+    "iceberg",
+    "sql",
+    "data"
+  ],
+  "license": "Apache-2.0",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.12"
+    }
+  }
+}

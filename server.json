@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.alaturqua/mcp-trino-python",
+  "title": "Trino",
+  "description": "Query Trino and inspect or maintain Iceberg tables: catalogs, schemas, SQL, snapshots.",
+  "repository": { "url": "https://github.com/alaturqua/mcp-trino-python", "source": "github" },
+  "websiteUrl": "https://github.com/alaturqua/mcp-trino-python",
+  "version": "0.8.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "mcp-trino-python",
+      "version": "0.8.0",
+      "runtimeHint": "uvx",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        { "name": "TRINO_HOST", "description": "Trino server hostname", "isRequired": true, "default": "localhost" },
+        { "name": "TRINO_PORT", "description": "Trino server port", "format": "number", "default": "8080" },
+        { "name": "TRINO_USER", "description": "Trino username", "isRequired": true, "default": "trino" },
+        { "name": "TRINO_PASSWORD", "description": "Trino password (enables basic auth; use with https)", "isSecret": true },
+        { "name": "TRINO_HTTP_SCHEME", "description": "http or https", "default": "http", "choices": ["http", "https"] },
+        { "name": "TRINO_CATALOG", "description": "Default catalog" },
+        { "name": "TRINO_SCHEMA", "description": "Default schema" },
+        { "name": "TRINO_READ_ONLY", "description": "Allow only read statements and hide maintenance tools", "format": "boolean", "default": "false" }
+      ]
+    },
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/alaturqua/mcp-trino-python:0.8.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        { "name": "TRINO_HOST", "description": "Trino server hostname", "isRequired": true },
+        { "name": "TRINO_PORT", "description": "Trino server port", "format": "number", "default": "8080" },
+        { "name": "TRINO_USER", "description": "Trino username", "isRequired": true, "default": "trino" },
+        { "name": "TRINO_PASSWORD", "description": "Trino password (enables basic auth; use with https)", "isSecret": true },
+        { "name": "TRINO_HTTP_SCHEME", "description": "http or https", "default": "http", "choices": ["http", "https"] },
+        { "name": "TRINO_CATALOG", "description": "Default catalog" },
+        { "name": "TRINO_SCHEMA", "description": "Default schema" },
+        { "name": "TRINO_READ_ONLY", "description": "Allow only read statements and hide maintenance tools", "format": "boolean", "default": "false" }
+      ]
+    }
+  ]
+}
