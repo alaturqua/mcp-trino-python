@@ -24,7 +24,7 @@ claude mcp add --transport http trino http://localhost:8000/mcp
 
 ## Docker
 
-The image is `ghcr.io/alaturqua/mcp-trino-python`. Tags follow the releases (`0.8.1`, `0.8`, `latest`).
+The image is `ghcr.io/alaturqua/mcp-trino-python`. Tags follow the releases (`0.8.2`, `0.8`, `latest`).
 
 ```bash
 # Streamable HTTP on port 8000

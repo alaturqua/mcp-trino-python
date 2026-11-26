@@ -1,6 +1,6 @@
 [project]
 name = "mcp-trino-python"
-version = "0.8.1"
+version = "0.8.2"
 description = "A Model Context Protocol (MCP) connector for Trino, enabling seamless integration between MCP-compliant services and Trino query engine"
 readme = "README.md"
 license = { text = "Apache-2.0" }

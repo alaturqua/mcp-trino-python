@@ -5,13 +5,13 @@
   "description": "Query Trino and inspect or maintain Iceberg tables: catalogs, schemas, SQL, snapshots.",
   "repository": { "url": "https://github.com/alaturqua/mcp-trino-python", "source": "github" },
   "websiteUrl": "https://github.com/alaturqua/mcp-trino-python",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "mcp-trino-python",
-      "version": "0.8.1",
+      "version": "0.8.2",
       "runtimeHint": "uvx",
       "transport": { "type": "stdio" },
       "environmentVariables": [
@@ -27,7 +27,7 @@
     },
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/alaturqua/mcp-trino-python:0.8.1",
+      "identifier": "ghcr.io/alaturqua/mcp-trino-python:0.8.2",
       "transport": { "type": "stdio" },
       "environmentVariables": [
         { "name": "TRINO_HOST", "description": "Trino server hostname", "isRequired": true },
