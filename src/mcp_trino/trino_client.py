@@ -9,6 +9,13 @@ from .config import TrinoConfig
 
 # shortcut: keyword check, not a SQL parser; the real guarantee is a read-only Trino user or access control.
 _READ_ONLY_SQL = re.compile(r"^\s*(\(\s*)*(SELECT|WITH|SHOW|DESCRIBE|EXPLAIN|VALUES)\b", re.IGNORECASE)
+# EXPLAIN ANALYZE really runs the statement; any ANALYZE word in an EXPLAIN is refused, so comments can't hide it.
+_EXPLAIN_ANALYZE = re.compile(r"^\s*(\(\s*)*EXPLAIN\b.*\bANALYZE\b", re.IGNORECASE | re.DOTALL)
+
+
+def _quote(*parts: str) -> str:
+    """Quote identifiers so a name can't break out into SQL: a"b -> "a""b"."""
+    return ".".join('"' + p.replace('"', '""') + '"' for p in parts)
 
 
 class TrinoError(Exception):
@@ -44,7 +51,7 @@ class TrinoClient:
 
     def _rows(self, query: str) -> list[dict] | None:
         """Run a query; None means the statement returns no result set (e.g. ALTER)."""
-        if self.config.read_only and not _READ_ONLY_SQL.match(query):
+        if self.config.read_only and (not _READ_ONLY_SQL.match(query) or _EXPLAIN_ANALYZE.match(query)):
             raise ReadOnlyError("Server is in read-only mode (TRINO_READ_ONLY); only read statements are allowed")
         cur = self.client.cursor()
         cur.execute(query)
@@ -63,7 +70,7 @@ class TrinoClient:
     def _metadata(self, catalog: str | None, schema: str | None, table: str, suffix: str) -> str:
         """Query an Iceberg metadata table such as ``table$snapshots``."""
         catalog, schema = self._resolve(catalog, schema)
-        return self.execute_query(f'SELECT * FROM {catalog}.{schema}."{table}${suffix}"')
+        return self.execute_query(f"SELECT * FROM {_quote(catalog, schema, f'{table}${suffix}')}")
 
     def execute_query(self, query: str) -> str:
         """Execute a SQL query and return the rows as a JSON string."""
@@ -85,38 +92,38 @@ class TrinoClient:
         catalog = catalog or self.config.catalog
         if not catalog:
             raise CatalogSchemaError("Catalog must be specified")
-        return "\n".join(row["Schema"] for row in self._rows(f"SHOW SCHEMAS FROM {catalog}"))
+        return "\n".join(row["Schema"] for row in self._rows(f"SHOW SCHEMAS FROM {_quote(catalog)}"))
 
     def list_tables(self, catalog: str | None, schema: str | None) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        return "\n".join(row["Table"] for row in self._rows(f"SHOW TABLES FROM {catalog}.{schema}"))
+        return "\n".join(row["Table"] for row in self._rows(f"SHOW TABLES FROM {_quote(catalog, schema)}"))
 
     def describe_table(self, catalog: str | None, schema: str | None, table: str) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        return self.execute_query(f"DESCRIBE {catalog}.{schema}.{table}")
+        return self.execute_query(f"DESCRIBE {_quote(catalog, schema, table)}")
 
     def show_create_table(self, catalog: str | None, schema: str | None, table: str) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        rows = self._rows(f"SHOW CREATE TABLE {catalog}.{schema}.{table}")
+        rows = self._rows(f"SHOW CREATE TABLE {_quote(catalog, schema, table)}")
         return rows[0]["Create Table"] if rows else ""
 
     def show_create_view(self, catalog: str | None, schema: str | None, view: str) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        rows = self._rows(f"SHOW CREATE VIEW {catalog}.{schema}.{view}")
+        rows = self._rows(f"SHOW CREATE VIEW {_quote(catalog, schema, view)}")
         return rows[0]["Create View"] if rows else ""
 
     def show_stats(self, catalog: str | None, schema: str | None, table: str) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        return self.execute_query(f"SHOW STATS FOR {catalog}.{schema}.{table}")
+        return self.execute_query(f"SHOW STATS FOR {_quote(catalog, schema, table)}")
 
     def optimize(self, catalog: str | None, schema: str | None, table: str) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        self._rows(f"ALTER TABLE {catalog}.{schema}.{table} EXECUTE optimize")
+        self._rows(f"ALTER TABLE {_quote(catalog, schema, table)} EXECUTE optimize")
         return f"Table {catalog}.{schema}.{table} optimized successfully"
 
     def optimize_manifests(self, catalog: str | None, schema: str | None, table: str) -> str:
         catalog, schema = self._resolve(catalog, schema)
-        self._rows(f"ALTER TABLE {catalog}.{schema}.{table} EXECUTE optimize_manifests")
+        self._rows(f"ALTER TABLE {_quote(catalog, schema, table)} EXECUTE optimize_manifests")
         return f"Manifests for table {catalog}.{schema}.{table} optimized successfully"
 
     def expire_snapshots(
@@ -126,7 +133,7 @@ class TrinoClient:
         if not re.fullmatch(r"\d+(\.\d+)?(ns|us|ms|s|m|h|d)", retention_threshold):
             raise TrinoError(f"Invalid retention_threshold {retention_threshold!r}; expected e.g. '7d' or '12h'")
         self._rows(
-            f"ALTER TABLE {catalog}.{schema}.{table} "
+            f"ALTER TABLE {_quote(catalog, schema, table)} "
             f"EXECUTE expire_snapshots(retention_threshold => '{retention_threshold}')"
         )
         return f"Snapshots older than {retention_threshold} expired for table {catalog}.{schema}.{table}"
@@ -136,10 +143,10 @@ class TrinoClient:
         for catalog in sorted(row["Catalog"] for row in self._rows("SHOW CATALOGS")):
             tree.append(catalog)
             try:
-                for schema in sorted(row["Schema"] for row in self._rows(f"SHOW SCHEMAS FROM {catalog}")):
+                for schema in sorted(row["Schema"] for row in self._rows(f"SHOW SCHEMAS FROM {_quote(catalog)}")):
                     tree.append(f"  {schema}")
                     try:
-                        tables = self._rows(f"SHOW TABLES FROM {catalog}.{schema}")
+                        tables = self._rows(f"SHOW TABLES FROM {_quote(catalog, schema)}")
                         tree.extend(f"    {t}" for t in sorted(row["Table"] for row in tables))
                     except (trino.exceptions.TrinoQueryError, KeyError):
                         tree.append("    (unable to list tables)")

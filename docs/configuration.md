@@ -25,9 +25,37 @@ With `TRINO_READ_ONLY=true`:
 
 - `optimize`, `optimize_manifests` and `expire_snapshots` are hidden from the assistant.
 - `execute_query` only runs statements that start with `SELECT`, `WITH`, `SHOW`, `DESCRIBE`, `EXPLAIN` or `VALUES`.
+  `EXPLAIN ANALYZE` is refused, because Trino really runs the statement it explains.
 
-This is a guard rail against mistakes, not a security boundary: it looks at the first keyword and does not parse the
-SQL. To be sure nothing can be changed, connect as a Trino user that only has read permissions.
+!!! danger "Read-only mode is a guard rail, not a security boundary"
+    It looks at the first keyword and does not parse the SQL. To be sure nothing can be changed, also connect as a
+    Trino user that only has read permissions, as shown below.
+
+### Use a read-only Trino user
+
+Give the server its own Trino user and let your access control allow that user to read only. With Trino's built-in
+[file-based access control](https://trino.io/docs/current/security/file-system-access-control.html), add to
+`etc/access-control.properties`:
+
+```properties
+access-control.name=file
+security.config-file=etc/rules.json
+```
+
+and in `etc/rules.json` make the server's user read-only on every catalog, while other users keep their access:
+
+```json
+{
+  "catalogs": [
+    { "user": "mcp_reader", "catalog": ".*", "allow": "read-only" },
+    { "allow": "all" }
+  ]
+}
+```
+
+Then point the server at that user with `TRINO_USER=mcp_reader` (plus `TRINO_PASSWORD` if your Trino uses password
+authentication). Inserts, deletes, DDL and table maintenance now fail in Trino itself, whatever SQL the assistant
+sends. If you use Apache Ranger, Starburst or another access control system, grant the user `SELECT` and `SHOW` only.
 
 ## Server options
 

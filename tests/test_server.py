@@ -52,6 +52,11 @@ async def test_read_only_mode(client, monkeypatch):
         assert "optimize" not in names and "execute_query" in names
         with pytest.raises(ToolError, match="read-only"):
             await client.call_tool("execute_query", {"query": "DELETE FROM tpch.tiny.nation"})
+        for sneaky in ("EXPLAIN ANALYZE DELETE FROM tpch.tiny.nation", "explain /* x */\nanalyze verbose delete from t"):
+            with pytest.raises(ToolError, match="read-only"):
+                await client.call_tool("execute_query", {"query": sneaky})
+        plan = await client.call_tool("execute_query", {"query": "EXPLAIN SELECT 1"})
+        assert plan.data
         ok = await client.call_tool("execute_query", {"query": "  with t as (select 1 x) select * from t"})
         assert json.loads(ok.data) == [{"x": 1}]
     finally:
