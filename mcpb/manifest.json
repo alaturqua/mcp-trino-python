@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "mcp-trino-python",
   "display_name": "Trino",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Query Trino and inspect or maintain Iceberg tables",
   "long_description": "Browse Trino catalogs, schemas and tables, run SQL, and inspect or maintain Iceberg tables (snapshots, manifests, partitions, files). Supports a read-only mode.",
   "author": {
